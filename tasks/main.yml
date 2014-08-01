@@ -1,0 +1,38 @@
+---
+- name: install make
+  yum: name=make
+
+- name: install rpm-build
+  yum: name=rpm-build
+
+#- name: download diamond zip
+#  get_url: url=https://github.com/BrightcoveOS/Diamond/archive/master.zip dest=/tmp/diamond.zip
+
+#- name: unzip diamond
+#  unarchive: src=/tmp/diamond.zip dest=/tmp/diamond
+
+- name: git clone diamond
+  git: repo=https://github.com/BrightcoveOS/Diamond.git
+       dest=/tmp/Diamond
+
+- name: clean built files
+  command: /usr/bin/make clean chdir=/tmp/Diamond
+
+- name: build rpm
+  command: /usr/bin/make rpm chdir=/tmp/Diamond
+
+- shell: ls diamond-*.noarch.rpm chdir=/tmp/Diamond/dist
+  register: rpm_file
+
+- name: install diamond from rpm
+  yum: name=/tmp/Diamond/dist/{{ rpm_file.stdout }}
+
+- name: be sure diamond started
+  service: name=diamond state=started
+
+- name: put diamond configration file
+  template: src=diamond.conf.j2
+            dest=/etc/diamond/diamond.conf
+            owner=root
+            group=root
+            mode=644
